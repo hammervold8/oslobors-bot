@@ -1,3 +1,4 @@
+twelvedata
 requests
 python-dotenv
-twelvedata
+pandas
