@@ -1,7 +1,9 @@
 import os
-from dotenv import load_dotenv
-import yfinance as yf
 import requests
+from dotenv import load_dotenv
+from twelvedata import TDClient
+from datetime import datetime
+import time
 
 # ==============================
 # Load environment variables
@@ -9,39 +11,56 @@ import requests
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+T12_API_KEY = os.getenv("TWELVE_API_KEY")
 
-if not TOKEN or not CHAT_ID:
-    raise ValueError("Missing TELEGRAM_TOKEN or TELEGRAM_CHAT_ID in environment")
+if not TOKEN or not CHAT_ID or not T12_API_KEY:
+    raise ValueError("Missing TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, or TWELVE_API_KEY in environment")
+
+# ==============================
+# Initialize Twelve Data Client
+# ==============================
+td = TDClient(apikey=T12_API_KEY)
 
 # ==============================
 # Configuration
 # ==============================
-NIKKEI_TICKERS = ["EWJ"]  # Japan ETF proxy
-NYSE_TICKER = "SPY"        # S&P 500 ETF as US market proxy
+NIKKEI_SYMBOL = "EWJ"  # Japan ETF proxy
+US_SYMBOL = "SPY"      # US S&P 500 ETF
 
 # ==============================
 # Functions
 # ==============================
-def get_index_change(tickers):
+def get_percent_change(symbol, retries=3, delay=2):
     """
-    Tries each ticker in the list until it gets valid data.
-    Returns percent change between yesterday and today.
+    Fetch percent change between the previous two full trading days.
+    Retries up to `retries` times on failure.
     """
-    for ticker in tickers:
+    for attempt in range(retries):
         try:
-            data = yf.download(ticker, period="2d", interval="1d", progress=False)
-            if data.empty or "Close" not in data or len(data["Close"]) < 2:
-                continue
-            yesterday, today = data["Close"].iloc[-2:]
-            return (today - yesterday) / yesterday * 100
-        except Exception:
-            continue
-    return 0.0
+            # Fetch daily time series data
+            ts = td.time_series(symbol=symbol, interval="1day", outputsize=3)
+            data = ts.as_pandas()
 
-def compute_signal(nikkei, nyse):
-    if nikkei > 0 and nyse > 0:
+            if data.empty or len(data) < 3:
+                raise ValueError(f"Not enough data for {symbol}")
+
+            # Calculate percent change between the last two days
+            close_today = data.iloc[1]["close"]
+            close_yesterday = data.iloc[2]["close"]
+            return ((close_today - close_yesterday) / close_yesterday) * 100
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                print(f"Failed to get {symbol}: {e}")
+                return None
+
+def compute_signal(nikkei, us):
+    if nikkei is None or us is None:
+        return "DATA UNAVAILABLE"
+    if nikkei > 0 and us > 0:
         return "LONG"
-    elif nikkei < 0 and nyse < 0:
+    elif nikkei < 0 and us < 0:
         return "SHORT"
     else:
         return "NEUTRAL"
@@ -58,16 +77,25 @@ def send_telegram(message: str):
 # Main
 # ==============================
 def main():
-    nikkei = get_index_change(NIKKEI_TICKERS)
-    nyse = get_index_change([NYSE_TICKER])
+    nikkei = get_percent_change(NIKKEI_SYMBOL)
+    us = get_percent_change(US_SYMBOL)
 
-    signal = compute_signal(nikkei, nyse)
+    signal = compute_signal(nikkei, us)
+
+    if nikkei is None or us is None:
+        warning = "⚠️ Warning: Could not fetch market data. Signal may be invalid."
+        print(warning)
+        send_telegram(warning)
+
     msg = (
-        f"📊 Morning Signal\n"
-        f"Nikkei: {nikkei:.2f}%\n"
-        f"NYSE: {nyse:.2f}%\n"
-        f"➡️ Signal: {signal}"
+        f"📊 Morning Signal ({datetime.now().strftime('%Y-%m-%d %H:%M')})\n"
+        f"Nikkei (EWJ): {nikkei:.2f}%\n" if nikkei is not None else "Nikkei (EWJ): N/A\n"
     )
+    msg += (
+        f"US Market (SPY): {us:.2f}%\n" if us is not None else "US Market (SPY): N/A\n"
+    )
+    msg += f"➡️ Signal: {signal}"
+
     print(msg)
     send_telegram(msg)
 
