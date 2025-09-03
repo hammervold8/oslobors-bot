@@ -1,5 +1,0 @@
-fastapi
-uvicorn
-requests
-gspread
-oauth2client
