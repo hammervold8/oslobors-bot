@@ -16,8 +16,8 @@ if not TOKEN or not CHAT_ID:
 # ==============================
 # Configuration
 # ==============================
-NIKKEI_TICKERS = ["^N225", "^NKX", "EWJ"]  # Japan ETF proxy
-NYSE_TICKER = "^NYA"                        # NYSE Composite
+NIKKEI_TICKERS = ["EWJ"]  # Japan ETF proxy
+NYSE_TICKER = "SPY"        # S&P 500 ETF as US market proxy
 
 # ==============================
 # Functions
