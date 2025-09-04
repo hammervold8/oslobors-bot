@@ -2,7 +2,7 @@ name: Morning Signal Bot
 
 on:
   schedule:
-    - cron: "55 6 * * 1-5" # 08:55 CET Mon–Fri
+    - cron: "30 6 * * 1-5" # 08:30 CET Mon–Fri
   workflow_dispatch:
 
 jobs:
