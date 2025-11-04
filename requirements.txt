@@ -2,3 +2,6 @@ twelvedata
 requests
 python-dotenv
 pandas
+
+transformers
+torch
