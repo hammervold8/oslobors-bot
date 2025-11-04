@@ -1,0 +1,41 @@
+name: Sentiment Run
+
+on:
+  schedule:
+    # GitHub Actions cron is in UTC. Oslo uses CET (UTC+1) or CEST (UTC+2) depending on DST.
+    # To run at 08:50 local Oslo time year-round we need two entries:
+    - cron: "50 6 * * 1-5" # 08:50 Europe/Oslo during DST (CEST, UTC+2)
+    - cron: "50 7 * * 1-5" # 08:50 Europe/Oslo during standard time (CET, UTC+1)
+  workflow_dispatch:
+
+jobs:
+  run-sentiment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set environment variables
+        run: |
+          echo "TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}" >> $GITHUB_ENV
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> $GITHUB_ENV
+          echo "TWELVE_API_KEY=${{ secrets.TWELVE_API_KEY }}" >> $GITHUB_ENV
+
+      - name: Run sentiment
+        run: python scripts/sentiment.py | tee sentiment.log
+
+      - name: Upload sentiment log
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentiment-log
+          path: sentiment.log
