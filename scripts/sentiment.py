@@ -98,11 +98,17 @@ def build_pipeline():
     """
     Build a Hugging Face transformers sentiment pipeline.
     """
+    hf_token = os.getenv("HF_TOKEN")
+    pipe_kwargs = {
+        "truncation": True,
+        "trust_remote_code": True,
+    }
+    if hf_token:
+        pipe_kwargs["use_auth_token"] = hf_token
     clf = pipeline(
         "text-classification",
         model=MODEL_NAME,
-        truncation=True,
-        trust_remote_code=True
+        **pipe_kwargs,
     )
     return clf
 

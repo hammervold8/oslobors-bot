@@ -30,6 +30,15 @@ jobs:
           echo "TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}" >> $GITHUB_ENV
           echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> $GITHUB_ENV
           echo "TWELVE_API_KEY=${{ secrets.TWELVE_API_KEY }}" >> $GITHUB_ENV
+          echo "HF_TOKEN=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV
+
+      - name: Hugging Face login
+        run: |
+          if [ -n "$HF_TOKEN" ]; then
+            huggingface-cli login --token "$HF_TOKEN"
+          else
+            echo "HF_TOKEN not provided; skipping Hugging Face login."
+          fi
 
       - name: Run sentiment
         run: python scripts/sentiment.py | tee sentiment.log
