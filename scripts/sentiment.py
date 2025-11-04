@@ -9,6 +9,7 @@ import requests
 from transformers import pipeline
 
 from dotenv import load_dotenv
+from fetch_oslo_news import collect_oslo_news
 load_dotenv()
 
 # -------- CONFIG -------- #
@@ -74,6 +75,21 @@ def load_latest_news() -> Dict:
 
     print(f"Using news file: {latest}", file=sys.stderr)
     return data
+
+
+def fetch_or_load_news() -> Dict:
+    """
+    Fetch fresh news first; fall back to the latest saved file if fetching fails.
+    """
+    try:
+        data, saved_path = collect_oslo_news(save=True)
+        if saved_path:
+            print(f"Fetched news and saved to {saved_path}", file=sys.stderr)
+        return data
+    except Exception as fetch_err:
+        print(f"ERROR: fetching latest news failed: {fetch_err}", file=sys.stderr)
+        print("Falling back to most recent saved file.", file=sys.stderr)
+        return load_latest_news()
 
 
 # -------- SENTIMENT MODEL -------- #
@@ -158,7 +174,7 @@ def score_to_signal(score: float) -> str:
 
 def main():
     try:
-        data = load_latest_news()
+        data = fetch_or_load_news()
     except Exception as e:
         print(f"ERROR: could not load news: {e}", file=sys.stderr)
         return

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 import json
 import time
-import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import urllib.request
 import xml.etree.ElementTree as ET
 import sys
+from pathlib import Path
 from urllib.parse import quote, urlsplit, urlunsplit
+
+DATA_DIR = Path("data")
 
 FEEDS = {
     "e24": "https://e24.no/rss2/?seksjon=boers-og-finans",
@@ -51,7 +53,23 @@ def is_oslo_relevant(item: dict) -> bool:
     text = f"{item['title']} {item['description']}".lower()
     return any(k in text for k in OSLO_INDEX_KEYWORDS)
 
-def main():
+def save_news_file(data: dict) -> Path:
+    """Persist fetched news to timestamped JSON file and return the path."""
+    tz = ZoneInfo("Europe/Oslo")
+    now = datetime.now(tz)
+    timestamp = now.strftime("%H%M-%d-%m-%Y")
+    DATA_DIR.mkdir(exist_ok=True)
+    path = DATA_DIR / f"oslo_news_{timestamp}.json"
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return path
+
+def collect_oslo_news(save: bool = True):
+    """
+    Fetch Oslo-relevant news from configured feeds.
+
+    Returns a tuple of (data, saved_path). saved_path is None when save=False.
+    """
     all_items = []
 
     for name, url in FEEDS.items():
@@ -80,19 +98,12 @@ def main():
         "items": filtered,
     }
 
-    # 1) print (so GitHub Actions etc can read it)
-    print(json.dumps(output, ensure_ascii=False))
+    saved_path = save_news_file(output) if save else None
+    return output, saved_path
 
-    # 2) save to file (so your sentiment step can load it)
-    # use Norway local time (Europe/Oslo) and include timezone abbreviation (CET/CEST)
-    tz = ZoneInfo("Europe/Oslo")
-    now = datetime.now(tz)
-    # filename format requested: 24HR (HHMM)-DD-MM-YYYY plus TZ abbr (e.g. 0930-03-11-2025_CET)
-    timestamp = now.strftime("%H%M-%d-%m-%Y")
-    os.makedirs("data", exist_ok=True)
-    filename = f"data/oslo_news_{timestamp}.json"
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+def main():
+    data, _ = collect_oslo_news(save=True)
+    print(json.dumps(data, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
