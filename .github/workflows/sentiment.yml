@@ -4,8 +4,8 @@ on:
   schedule:
     # GitHub Actions cron is in UTC. Oslo uses CET (UTC+1) or CEST (UTC+2) depending on DST.
     # To run at 08:50 local Oslo time year-round we need two entries:
-    - cron: "50 6 * * 1-5" # 08:50 Europe/Oslo during DST (CEST, UTC+2)
-    - cron: "50 7 * * 1-5" # 08:50 Europe/Oslo during standard time (CET, UTC+1)
+    - cron: "45 6 * * 1-5" # 08:50 Europe/Oslo during DST (CEST, UTC+2)
+    - cron: "45 7 * * 1-5" # 08:50 Europe/Oslo during standard time (CET, UTC+1)
   workflow_dispatch:
 
 jobs:
@@ -29,7 +29,6 @@ jobs:
         run: |
           echo "TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}" >> $GITHUB_ENV
           echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> $GITHUB_ENV
-          echo "TWELVE_API_KEY=${{ secrets.TWELVE_API_KEY }}" >> $GITHUB_ENV
           echo "HF_TOKEN=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV
 
       - name: Hugging Face login
