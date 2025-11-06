@@ -14,7 +14,6 @@ DATA_DIR = Path("data")
 FEEDS = {
     "e24": "https://e24.no/rss2/?seksjon=boers-og-finans",
     "dn": "https://services.dn.no/api/feed/rss/?categories=b%C3%B8rs&topics=",
-    ""
     "nettavisen": "https://www.nettavisen.no/service/rich-rss",
 }
 
@@ -47,7 +46,17 @@ def safe_url(url: str) -> str:
 
 def fetch(url: str) -> bytes:
     safe = safe_url(url)
-    with urllib.request.urlopen(safe, timeout=10) as r:
+    req = urllib.request.Request(
+        safe,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                "Version/17.0 Safari/605.1.15"
+            )
+        },
+    )
+    with urllib.request.urlopen(req, timeout=10) as r:
         return r.read()
 
 def parse_rss(xml_bytes: bytes, source: str):
