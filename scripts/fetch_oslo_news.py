@@ -13,14 +13,30 @@ DATA_DIR = Path("data")
 
 FEEDS = {
     "e24": "https://e24.no/rss2/?seksjon=boers-og-finans",
-    # use the one you saw in the browser 👇
     "dn": "https://services.dn.no/api/feed/rss/?categories=b%C3%B8rs&topics=",
+    ""
+    "nettavisen": "https://www.nettavisen.no/service/rich-rss",
 }
 
 OSLO_INDEX_KEYWORDS = [
-    "børsen", "oslo børs", "oslobørs", "børsen åpner", "børsen stenger",
-    "hovedindeksen", "obx", "omx", "omx oslo 20", "børsfall",
-    "børsoppgang", "oljeprisen", "brent", "råolje",
+    # Oslo Børs / indices
+    "oslo børs", "oslobørs", "oslo-børs",
+    "børsen", "børs",
+    "hovedindeksen", "hovedindeks",
+    "børsindeksen", "aksjeindeksen",
+    "obx", "omx oslo 20", "omx oslo",
+
+    # Market moves / volatility
+    "børsfall", "børsoppgang",
+    "kursfall", "kursras", "børskrasj", "børskollaps",
+    "børsrally", "børsuro",
+
+    # Oil & energy
+    "oljeprisen", "oljepris",
+    "brent", "nordsjøolje", "råolje",
+
+    # Macro that often hits Oslo Børs
+    "styringsrenten", "renteheving", "rentekutt",
 ]
 
 def safe_url(url: str) -> str:
